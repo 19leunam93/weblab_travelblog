@@ -15,14 +15,11 @@ if ($result->num_rows > 0) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="de-DE">
+<html lang="de">
 <head>
 <title>Travel Blog</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script type="module">
-	import {html, render} from 'https://unpkg.com/lit-html?module';
-</script>
 <script type="text/javascript">
 	const siteRoutes = [
 		{
@@ -65,7 +62,7 @@ if ($result->num_rows > 0) {
 		}
 	];
 </script>
-<script src="app/app.js"></script>
+<script src="js/app.js"></script>
 <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 <body>

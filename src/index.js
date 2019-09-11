@@ -5,6 +5,8 @@
 *
 */
 
+import {html, render} from 'lit-html';
+
 window.onload = function() {
 
 	//-- Initialisation ---------
@@ -26,7 +28,7 @@ window.onload = function() {
 
 	//---------------------------
 
-	const firstTemplate = (name) => html`<p>Du bist auf der Seite: ${name}</p>`;
+	
 
 	// modify url by internal links
 	var activeRoutes = Array.from(document.querySelectorAll('[route]'));
@@ -58,7 +60,8 @@ window.onload = function() {
 			siteTitle.innerHTML = routeInfo.sitename;
 			// add app functionality here
 			//render(<p>Du bist auf der Seite: ${sitename}</p>, document.getElementById('app-content'));
-			render(firstTemplate(routeInfo.sitename), appContent.innerHTML);
+			let firstTemplate = (name) => html`<p>Du bist auf der Seite: ${name}</p>`;
+			render(firstTemplate(routeInfo.sitename), appContent);
 		}
 	}
 };
