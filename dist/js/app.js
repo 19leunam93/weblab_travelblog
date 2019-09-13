@@ -81,11 +81,347 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 6);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports) {
+
+/*
+*
+* Base-Class for the View-Classes
+*
+*/
+
+class baseView {
+
+	constructor(route) {
+		function createapi(route) {
+			if (typeof route.view !== 'undefined') {
+				var view = '/' + route.view;
+			} else {var view = ''}
+			if (typeof route.id !== 'undefined') {
+				var id = '/' + route.id;
+			} else {var id = ''}
+			return view + id;
+		}
+		this.base_apiURL = 'https://api.weblab.spuur.ch' + createapi(route);
+		this.sitename = route.sitename;
+		this.viewAuth = false;
+	}
+
+	// the template of the view
+	template() {
+		let name = this.sitename;
+		return html`<p>Du bist auf der Seite: ${name}</p>`;
+	}
+
+	// get data from api and render the template into a given element
+	renderView(element) {
+		let url = this.base_apiURL;
+		async function getRecords() {
+			let response = await fetch (url);
+			if (await response.status == 200) {
+				return response.json();
+			} else {
+				let error = 'Netzwerkfehler: ' + response.status + ' - ' + response.statusText;
+				render(setMessage('error', error), document.getElementById('message'));
+			}
+		}
+		getRecords().then((data) => {this.ressource = data;})
+					.then(() => {render(this.template(), element); indexLinks();})
+					//.catch((error) => {render(setMessage('error', error), document.getElementById('message'));})
+	}
+
+
+}
+
+module.exports = baseView;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var baseView = __webpack_require__(0);
+var blogsView = __webpack_require__(2);
+var blogView = __webpack_require__(3);
+
+var classes = {
+	blogsView,
+	blogView
+}
+
+class dynView {
+	constructor (className, opts) {
+		if (classes[className] !== undefined) {
+			return new classes[className](opts);
+		} else {
+			return new baseView(opts);
+		}		
+	}
+}
+
+module.exports = dynView;
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+*
+* Class for the "Blogs" View (Listing of Blogs)
+*
+*/
+let baseView = __webpack_require__(0);
+
+class blogsView extends baseView {
+
+	// the template of the view
+	template() {
+		let blogs = this.ressource.records;
+		let bloglist =  html`${blogs.map((blog) => html`<div class="column col-12">
+											  	<div class="card flex-row">
+											  	  <div class="card-image">
+											  	  	<img class="img-responsive" src="${blog.img_intro}">
+											  	  </div>
+											  	  <div class="card-content">
+											  	  	<div class="card-header">
+											  	  	  <a class="card-title h4" route="${blog.alias}">${blog.title}</a>
+											  	  	  <div class="card-subtitle text-gray">Datum: ${blog.date} / Destination: ${blog.destination}</div>
+											  	  	</div>
+											  	  	<div class="card-body">${blog.description}</div>
+											  	  	<div class="card-footer"><button class="btn btn-primary" route="${blog.alias}">Weiterlesen...</button></div>
+											  	  </div>
+											  	</div>
+											  </div>`)}`;
+		let tmpl = html`<div class="columns">${bloglist}<div>`;
+		return tmpl;
+	}
+
+}
+
+module.exports = blogsView;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+*
+* Class for the "Blog" View (single Blog)
+*
+*/
+let baseView = __webpack_require__(0);
+
+class blogView extends baseView {
+
+	// the template of the view
+	template() {
+		let blog = this.ressource.records;
+		let posts = blog.posts.records;
+		let postlist = [];
+		let gallery = html``;
+		for (let post of posts) {
+			if (post.gallery != undefined) {
+				let images = post.gallery.images;
+				let figlist = [];
+				let loclist = [];
+				let navlist = [];
+				let lenght = images.length;
+				let index = 1;
+				let prev = lenght;
+				let next = index + 1;
+				for (let img of images) {
+					if (index == 1) {prev = lenght; next = index + 1;}
+					else if (index == lenght) {prev = index - 1; next = 1;}
+					else {prev = index - 1; next = index + 1;}
+					img = img.replace(/"/g,'');
+
+				//Carousel Template
+				//-----------------
+					figlist.push(html`<figure class="carousel-item">
+										      <label class="item-prev btn btn-action btn-lg" for="slide-${prev}"><i class="icon icon-arrow-left"></i></label>
+										      <label class="item-next btn btn-action btn-lg" for="slide-${next}"><i class="icon icon-arrow-right"></i></label>
+										      <img class="img-responsive rounded" src="${img}">
+										  </figure>`);
+					if (index == 1) {
+						loclist.push(html`<input class="carousel-locator" id="slide-${index}" type="radio" name="carousel-radio" hidden="" checked="">`);
+					} else {
+						loclist.push(html`<input class="carousel-locator" id="slide-${index}" type="radio" name="carousel-radio" hidden="">`);
+					}
+					
+					navlist.push(html`<label class="nav-item text-hide c-hand" for="slide-${index}">${index}</label>`);
+					index++;
+				}
+				gallery = html`<div class="carousel p-centered">
+									  ${loclist}
+									  <div class="carousel-container">
+									  	${figlist}
+									  </div>
+									  <div class="carousel-nav">
+									  	${navlist}
+									  </div>
+								   </div>`;
+				//------------------
+			} else {gallery = html``;}
+
+			//Einzelner Post
+			postlist.push(html`<div class="column col-12 blogpost">
+									 <div class="card flex-column">
+									 <div class="card-body">
+								       <h4>${post.title}</h4>
+								       <div class="infos text-gray">Datum: ${post.date} / Author: ${post.user_id} / Anzahl Likes: ${post.likes}</div>
+								       <p class="text-intro">${post.txt_intro}</p>
+									   <figure class="figure mb-6">
+									     <img class="img-responsive p-centered" src="${post.img}">
+									   </figure>
+									   <p>${post.txt_content}</p>
+									   ${gallery}
+									   <div class="text-center mt-10">
+									   	 <button class="btn" onclick="view.doLike(${post.id})"><span class="icon icon-emoji mr-2"></span>Gefällt mir</button><span class="ml-2">(<span id="postLike-${post.id}">${post.likes}</span>)</span>
+									   </div>
+									 </div>
+									 </div>
+						  		  </div>`);
+		}
+		//Blog Einleitung (Titelbild, Beschreibung, Details)
+		let tmpl = html`<div class="blog-intro">
+							<figure class="figure">
+			 				  <img class="img-responsive" src="${blog.img_titel}">
+			 				  <figcaption class="figure-caption">Datum: ${blog.date} / Destination: ${blog.destination} / Dauer: ${blog.duration} Tage</figcaption>
+			 				</figure>
+			 				<p class="text-intro">${blog.description}</p><br /><div class="columns">${postlist}</div>
+		 				</div>`;
+		return tmpl;
+	}
+
+	// deliver a like
+	doLike(postId) {
+		let url = 'https://api.weblab.spuur.ch/post' + '/' + postId + '/likes';
+		async function Like() {
+			let response = await fetch (url, {method: 'PUT',headers: {'Content-Type': 'application/x-www-form-urlencoded'},body:'likes=1'});
+			if (await response.status == 200) {
+				let success = 'Danke! Dein Like wurde aufgenommen';
+				render(setMessage('success', success), document.getElementById('message'));
+				return response.json();
+			} else {
+				let error = 'Netzwerkfehler: ' + response.status + ' - ' + response.statusText;
+				render(setMessage('error', error), document.getElementById('message'));
+			}
+		}
+		Like().then((data) => {document.getElementById('postLike-'+postId).innerHTML = data.records.likes;});
+	}
+}
+
+module.exports = blogView;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+*
+* Class for the Breadcrumbs Module
+*
+*/
+let baseModule = __webpack_require__(5);
+
+class breadcrumbModule extends baseModule{
+
+	constructor(route, posId) {
+
+		super(route,posId);
+
+		function getRoute(viewName, viewId) {
+			let siteArray = [];
+			var parent = '';
+			//search actual side
+			for (let a of siteRoutes) {
+				if ((a.view == viewName && a.id == viewId) || (a.view == viewName && viewId == undefined)) {
+					if (a.parentview === false) {
+						parent = 'root';
+						break;
+					}
+					//add actual site
+					siteArray.push(a);
+					parent = a.parentview;
+					break;
+				}
+			}			
+			//jump from parent to parent until root
+			while (parent != 'root') {
+				for (let a of siteRoutes) {
+					if (a.view == parent) {
+						//add parent node
+						siteArray.push(a);
+						parent = a.parentview;
+					}
+				}
+			}
+			//add root
+			siteArray.push(siteRoutes[0]);
+			//transponde siteArray
+			siteArray.reverse();
+			return siteArray;
+		}
+		this.route = getRoute(route.view, route.id);
+	}
+
+	// the template of the module
+	template() {
+		let sites = this.route;
+		let li =  html`${sites.map((site) => html`<li class="breadcrumb-item">
+													  <a route="${site.path}">${site.sitename}</a>
+												  </li>`)}`;
+		let tmpl = html`<ul class="breadcrumb">
+							${li}
+						</ul>`;
+		return tmpl;
+	}
+
+	renderModule() {
+		render(this.template(), this.modulePosition);
+	}
+
+}
+
+module.exports = breadcrumbModule;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+/*
+*
+* Class for the Breadcrumbs Module
+*
+*/
+
+class baseModule {
+
+	constructor(route, posId) {
+
+		this.modulePosition = document.getElementById(posId);
+		this.sitename = route.sitename;
+		this.path = route.path;
+	}
+
+	// the template of the module
+	template() {
+		return html`<p>Das ist eine Modulposition</p>`;
+	}
+
+	renderModule() {
+		render(this.template(), this.modulePosition);
+	}
+
+}
+
+module.exports = baseModule;
+
+/***/ }),
+/* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1355,10 +1691,43 @@ const svg = (strings, ...values) => new template_result_SVGTemplateResult(string
 */
 
 
+window.html = lit_html_html;
+window.render = render;
+
+const dynView = __webpack_require__(1);
+const breadcrumbModule = __webpack_require__(4);
+
+// Modules
 
 window.onload = function() {
 
 	//-- Initialisation ---------
+
+	// clear message box
+	const clearMessages = function() {
+		document.getElementById('message').innerHTML = '';
+	}
+	window.clearMessages = clearMessages;
+
+	// set a message to the message box
+	const setMessage = function(type, message) {
+		let msgBox = lit_html_html`<div class="toast toast-${type}">
+  						<button class="btn btn-clear float-right" onclick="clearMessages()"></button>
+  						${message}
+					</div>`;
+		return msgBox;
+	}
+	window.setMessage = setMessage;
+
+	// eventlistener on internal links to modify the url
+	const indexLinks = function() {
+		let activeRoutes = Array.from(document.querySelectorAll('[route]'));
+		activeRoutes.forEach(function(links) {
+			links.removeEventListener('click', internalLinks, false);
+			links.addEventListener('click', internalLinks, false);
+		});
+	}
+	window.indexLinks = indexLinks;
 
 	// create Router
 	const Router = function(name, routes){
@@ -1375,17 +1744,10 @@ window.onload = function() {
 
 	modifyContent();
 
-	//---------------------------
+	//---------------------------	
 
-	
-
-	// modify url by internal links
-	var activeRoutes = Array.from(document.querySelectorAll('[route]'));
-	activeRoutes.forEach(function(route) {
-		route.addEventListener('click', internalLinks, false);
-	});
-	function internalLinks(event) {
-		var route = event.target.attributes[0].value;
+	const internalLinks = function(event) {
+		var route = event.target.getAttribute('route');
 		window.history.pushState({}, '', route);
 		modifyContent();
 	};
@@ -1397,21 +1759,32 @@ window.onload = function() {
 
 	// modify HTML-content based on route
 	function modifyContent() {
-		var currentPath = window.location.pathname;		
-		var routeInfo = myRouter.routes.filter(function(r) {
+		let currentPath = window.location.pathname;		
+		let routeInfo = myRouter.routes.filter(function(r) {
 			return r.path === currentPath;
 		})[0];
 		console.log(routeInfo);
 		if (!routeInfo) {
 			siteTitle.innerHTML = '404';
-			appContent.innerHTML = 'Seite existiert nicht!';
+			var tmpl = () => lit_html_html`Seite existiert nicht!`;
+			render(tmpl(), appContent);
+			//appContent.innerHTML = 'Seite existiert nicht!';
 		} else {
+			// insert sitetitel into <h2 id="site-titel">
 			siteTitle.innerHTML = routeInfo.sitename;
-			// add app functionality here
-			//render(<p>Du bist auf der Seite: ${sitename}</p>, document.getElementById('app-content'));
-			let firstTemplate = (name) => lit_html_html`<p>Du bist auf der Seite: ${name}</p>`;
-			render(firstTemplate(routeInfo.sitename), appContent);
-		}
+			
+			// construct view-class based on route
+			let c = routeInfo.view + 'View';
+			console.log(c);
+			let view = new dynView(c, routeInfo);
+			window.view = view;
+			// insert content into <div id="app-content">
+			view.renderView(appContent);
+
+			// insert breadcrumbs into <ul class="breadcrumb">
+			let breadcrumbs = new breadcrumbModule(routeInfo, 'breadcrumb');
+			breadcrumbs.renderModule();
+		} 
 	}
 };
 

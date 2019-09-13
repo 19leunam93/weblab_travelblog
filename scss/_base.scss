@@ -36,6 +36,7 @@ a {
   color: $link-color;
   outline: none;
   text-decoration: none;
+  cursor: pointer;
 
   &:focus {
     @include control-shadow();

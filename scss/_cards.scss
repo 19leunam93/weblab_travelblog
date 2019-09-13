@@ -1,10 +1,11 @@
 // Cards
 .card {
   background: $bg-color-light;
-  border: $border-width solid $border-color;
+  box-shadow: 0 .25rem 1rem rgba(48,55,66,.15);
   border-radius: $border-radius;
   display: flex;
   flex-direction: column;
+  height: 100%;
 
   .card-header,
   .card-body,
@@ -23,6 +24,7 @@
 
   .card-image {
     padding-top: $layout-spacing-lg;
+    flex-shrink: 0;
 
     &:first-child {
       padding-top: 0;
@@ -41,3 +43,9 @@
     }
   }
 }
+
+@media screen and (max-width: 500px) {
+    .card {
+      flex-direction: column;
+    }    
+  }

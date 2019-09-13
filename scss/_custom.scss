@@ -1,0 +1,25 @@
+//Custom
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.text-intro {
+	margin: 1rem 0 1.2rem;
+	font-size: 0.9rem;
+}
+
+.blog-intro .text-intro {
+	font-style: italic;
+	font-weight: 600;
+}
+
+.carousel {
+	max-width: 700px;
+}

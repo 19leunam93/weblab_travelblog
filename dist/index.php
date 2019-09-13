@@ -1,7 +1,7 @@
-<?php
+<?php 
 
 //get id, title and alias of blogs
-$db = new mysqli('localhost', 'spuurch_weblab', 'password', 'spuurch_weblab03');
+$db = new mysqli('localhost', 'spuurch_weblab', 'M6PnVe4g7XU9Gj2', 'spuurch_weblab03');
 if ($db->connect_error) {
     die("Connection failed: " . $db->connect_error);
 }
@@ -25,40 +25,47 @@ if ($result->num_rows > 0) {
 		{
 			path: '/',
 			sitename: 'Home',
-			view: 'blogs'
+			view: 'blogs',
+			parentview: false
 		},
 		{
 			path: '/blogs',
 			sitename: 'Home',
-			view: 'blogs'
+			view: 'blogs',
+			parentview: false
 		},
 		{
 			path: '/login',
 			sitename: 'Anmelden',
-			view: 'login'
+			view: 'login',
+			parentview: 'root'
 		},
 		<?php foreach ($blogs as $key => $blog): ?>
 			{
 				path: '/<?php echo $blog['alias'] ;?>',
 				sitename: '<?php echo $blog['title'] ;?>',
 				id: '<?php echo $blog['id'] ;?>',
-				view: 'blog'
+				view: 'blog',
+				parentview: 'root'
 			},
 		<?php endforeach; ?>
 		{
 			path: '/edit',
 			sitename: 'Ressource Bearbeiten',
-			view: 'edit'
+			view: 'edit',
+			parentview: 'root'
 		},
 		{
 			path: '/edit/blog',
 			sitename: 'Blog Bearbeiten',
-			view: 'editBlog'
+			view: 'editBlog',
+			parentview: 'edit'
 		},
 		{
 			path: '/edit/post',
 			sitename: 'Blog-Post Bearbeiten',
-			view: 'editPost'
+			view: 'editPost',
+			parentview: 'edit'
 		}
 	];
 </script>
@@ -73,14 +80,14 @@ if ($result->num_rows > 0) {
 		</div>
 	</header>
 	<main class="docs-content container">
-		<ul class="breadcrumb">
-			<li class="breadcrumb-item">
-				<a route="/">Home</a>
-			</li>
-		</ul>
-		<button route="/">Home</button>
-		<button route="/blogs">Blog-List</button>
-		<button route="/safari-in-namibia">Blog1</button>
+		<div id="message"></div>
+		<div id= "breadcrumb">
+			<ul class="breadcrumb">
+				<li class="breadcrumb-item">
+					<a route="/">Home</a>
+				</li>
+			</ul>
+		</div>
 		<h2 id="site-titel">Site-Titel</h2>
 		<div id="app-content"><div style="padding-top: 5%;" class="loading loading-xlg d-block"></div></div>
 				
