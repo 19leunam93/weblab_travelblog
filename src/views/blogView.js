@@ -70,7 +70,7 @@ class blogView extends baseView {
 									   <p>${post.txt_content}</p>
 									   ${gallery}
 									   <div class="text-center mt-10">
-									   	 <button class="btn" onclick="view.doLike(${post.id})"><span class="icon icon-emoji mr-2"></span>Gefällt mir</button><span class="ml-2">(<span id="postLike-${post.id}">${post.likes}</span>)</span>
+									   	 <button class="btn" onclick="view.doLike(${post.id})"><span class="icon icon-emoji mr-2"></span>Gefällt mir</button><span class="ml-2">(Likes: <span id="postLike-${post.id}">${post.likes}</span>)</span>
 									   </div>
 									 </div>
 									 </div>
@@ -101,7 +101,7 @@ class blogView extends baseView {
 				render(setMessage('error', error), document.getElementById('message'));
 			}
 		}
-		Like().then((data) => {document.getElementById('postLike-'+postId).innerHTML = data.records.likes;});
+		Like().then((data) => {document.getElementById('postLike-'+postId).innerHTML = data.records[0].likes;});
 	}
 }
 

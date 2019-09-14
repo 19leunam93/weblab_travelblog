@@ -2297,9 +2297,10 @@ summary.accordion-header::-webkit-details-marker {
       border-bottom-left-radius: 0.1rem;
       border-bottom-right-radius: 0.1rem; }
 
-@media screen and (max-width: 500px) {
+@media screen and (max-width: 550px) {
   .card {
-    flex-direction: column; } }
+    flex-direction: column;
+    flex-wrap: wrap; } }
 .dropdown {
   display: inline-block;
   position: relative; }

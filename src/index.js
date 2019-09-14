@@ -12,8 +12,6 @@ window.render = render;
 const dynView = require('./views/dynView');
 const breadcrumbModule = require('./modules/breadcrumbModule');
 
-// Modules
-
 window.onload = function() {
 
 	//-- Initialisation ---------
@@ -90,7 +88,6 @@ window.onload = function() {
 			
 			// construct view-class based on route
 			let c = routeInfo.view + 'View';
-			console.log(c);
 			let view = new dynView(c, routeInfo);
 			window.view = view;
 			// insert content into <div id="app-content">
