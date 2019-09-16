@@ -152,15 +152,23 @@ var classes = {
 	blogView
 }
 
-class dynView {
-	constructor (className, opts) {
-		if (classes[className] !== undefined) {
-			return new classes[className](opts);
-		} else {
-			return new baseView(opts);
-		}		
+let dynView = function(className, opts) {
+	if (classes[className] !== undefined) {
+		return new classes[className](opts);
+	} else {
+		return new baseView(opts);
 	}
 }
+
+// class dynView {
+// 	constructor (className, opts) {
+// 		if (classes[className] !== undefined) {
+// 			return new classes[className](opts);
+// 		} else {
+// 			return new baseView(opts);
+// 		}		
+// 	}
+// }
 
 module.exports = dynView;
 
@@ -1773,7 +1781,8 @@ window.onload = function() {
 			
 			// construct view-class based on route
 			let c = routeInfo.view + 'View';
-			let view = new dynView(c, routeInfo);
+			let view = dynView(c, routeInfo);
+			//let view = new dynView(c, routeInfo);
 			window.view = view;
 			// insert content into <div id="app-content">
 			view.renderView(appContent);

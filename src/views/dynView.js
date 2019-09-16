@@ -7,13 +7,11 @@ var classes = {
 	blogView
 }
 
-class dynView {
-	constructor (className, opts) {
-		if (classes[className] !== undefined) {
-			return new classes[className](opts);
-		} else {
-			return new baseView(opts);
-		}		
+let dynView = function(className, opts) {
+	if (classes[className] !== undefined) {
+		return new classes[className](opts);
+	} else {
+		return new baseView(opts);
 	}
 }
 

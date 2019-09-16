@@ -88,7 +88,7 @@ window.onload = function() {
 			
 			// construct view-class based on route
 			let c = routeInfo.view + 'View';
-			let view = new dynView(c, routeInfo);
+			let view = dynView(c, routeInfo);
 			window.view = view;
 			// insert content into <div id="app-content">
 			view.renderView(appContent);
