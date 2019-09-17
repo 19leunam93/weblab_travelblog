@@ -9,7 +9,7 @@ class blogView extends baseView {
 
 	// the template of the view
 	template() {
-		let blog = this.ressource.records;
+		let blog = this.data.records;
 		let posts = blog.posts.records;
 		let postlist = [];
 		let gallery = html``;

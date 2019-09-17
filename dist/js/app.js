@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = 8);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -108,20 +108,41 @@ class baseView {
 		}
 		this.base_apiURL = 'https://api.weblab.spuur.ch' + createapi(route);
 		this.sitename = route.sitename;
-		this.viewAuth = false;
+		this.authorized = false;
+		this.authorized_actions = [];
 	}
 
-	// the template of the view
+	// the template for unauthorized users
+	template401() {
+		let name = this.sitename;
+		let msg = '401: Nicht authorisiert!';
+		render(setMessage('error', error), document.getElementById('message'));
+		return html`<p>Du bist nicht authorisiert, die Seite ${name} zu betrachten.</p>`;
+	}
+
+	// the standard template
 	template() {
 		let name = this.sitename;
-		return html`<p>Du bist auf der Seite: ${name}</p>`;
+		return html`<p>Du befindest dich auf der Seite: ${name}.</p>`;
+	}
+
+	// the template for logged in users
+	user_template(authActions) {
+		let username = this.username;
+		return html`<p>Hallo ${username}. Du befindest dich auf der Seite: ${name}.</p>`;
 	}
 
 	// get data from api and render the template into a given element
 	renderView(element) {
 		let url = this.base_apiURL;
+		let parameters = {method: 'GET', mode: 'cors'};
+		if (localStorage.getItem("secure_token") === null) {
+			parameters = {method: 'GET', mode: 'cors'};
+		} else {
+			parameters = {method: 'GET', mode: 'cors',headers: {'Authorization': 'Bearer ' + localStorage.getItem('secure_token')}};
+		}
 		async function getRecords() {
-			let response = await fetch (url);
+			let response = await fetch (url, parameters);
 			if (await response.status == 200) {
 				return response.json();
 			} else {
@@ -129,12 +150,31 @@ class baseView {
 				render(setMessage('error', error), document.getElementById('message'));
 			}
 		}
-		getRecords().then((data) => {this.ressource = data;})
-					.then(() => {render(this.template(), element); indexLinks();})
+		getRecords().then((data) => {this.data = data;})
+					.then(() => {
+						// authentification of this view (Are you authorized to see this view?)
+						[this.authorized, this.authorized_actions] = auth.doAuthorisation(this.data.authorization);
+						console.log('authObj:');
+						console.log(auth);
+						// depending of the authorization select the template
+						console.log('template:');
+						if (this.authorized) {
+							if (auth.logged_in) {
+								render(this.user_template(this.authorized_actions), element);
+								console.log('user_template()');
+							} else {
+								render(this.template(), element);
+								console.log('template()');
+							}							
+						} else {
+							render(this.template401(), element);
+							console.log('template401()');
+						}
+									
+						indexLinks();
+					})
 					//.catch((error) => {render(setMessage('error', error), document.getElementById('message'));})
 	}
-
-
 }
 
 module.exports = baseView;
@@ -146,10 +186,12 @@ module.exports = baseView;
 var baseView = __webpack_require__(0);
 var blogsView = __webpack_require__(2);
 var blogView = __webpack_require__(3);
+var loginView = __webpack_require__(4);
 
 var classes = {
 	blogsView,
-	blogView
+	blogView,
+	loginView
 }
 
 let dynView = function(className, opts) {
@@ -159,16 +201,6 @@ let dynView = function(className, opts) {
 		return new baseView(opts);
 	}
 }
-
-// class dynView {
-// 	constructor (className, opts) {
-// 		if (classes[className] !== undefined) {
-// 			return new classes[className](opts);
-// 		} else {
-// 			return new baseView(opts);
-// 		}		
-// 	}
-// }
 
 module.exports = dynView;
 
@@ -185,9 +217,39 @@ let baseView = __webpack_require__(0);
 
 class blogsView extends baseView {
 
+	// the template for logged in users which are not usergroup=public
+	user_template(authActions) {
+		let blogs = this.data.records;
+		let bloglist =  html`${blogs.map((blog) => html`<div class="column col-12">
+											  	<div class="card flex-row">
+											  	  <div class="card-image">
+											  	  	<img class="img-responsive" src="${blog.img_intro}">
+											  	  </div>
+											  	  <div class="card-content">
+											  	  	<div class="card-header">
+											  	  	  <a class="card-title h4" route="${blog.alias}">${blog.title}</a>
+											  	  	  <div class="card-subtitle text-gray">Datum: ${blog.date} / Destination: ${blog.destination}</div>
+											  	  	</div>
+											  	  	<div class="card-body">${blog.description}</div>
+											  	  	<div class="card-footer">
+											  	  	  <div>
+											  	  	    <button class="btn btn-primary" route="${blog.alias}">Weiterlesen...</button>
+											  	  	  </div>
+											  	  	  <div class"btn-group btn-group-block">
+											  	  	    <button class="btn">Blog Bearbeiten</button>
+											  	  	    <button class="btn btn-error">Blog Löschen</button>
+											  	  	  </div>
+											  	  	</div>
+											  	  </div>
+											  	</div>
+											  </div>`)}`;
+		let tmpl = html`<div><button class="btn btn-success">Neuer Blog</button><div><div class="columns">${bloglist}<div>`;
+		return tmpl;
+	}
+
 	// the template of the view
 	template() {
-		let blogs = this.ressource.records;
+		let blogs = this.data.records;
 		let bloglist =  html`${blogs.map((blog) => html`<div class="column col-12">
 											  	<div class="card flex-row">
 											  	  <div class="card-image">
@@ -226,7 +288,7 @@ class blogView extends baseView {
 
 	// the template of the view
 	template() {
-		let blog = this.ressource.records;
+		let blog = this.data.records;
 		let posts = blog.posts.records;
 		let postlist = [];
 		let gallery = html``;
@@ -330,10 +392,89 @@ module.exports = blogView;
 
 /*
 *
+* Class for the "Blogs" View (Listing of Blogs)
+*
+*/
+let baseView = __webpack_require__(0);
+
+class loginView extends baseView {
+
+	formSubmit(event,methode) {
+		event.preventDefault();
+		if (methode == 'login') {
+			let urlEncodedData = "";
+	  		let urlEncodedDataPairs = [];
+	  		// get form data
+	  		urlEncodedDataPairs.push(encodeURIComponent('username') + '=' + encodeURIComponent(document.getElementById('input-username').value));
+	  		urlEncodedDataPairs.push(encodeURIComponent('password') + '=' + encodeURIComponent(document.getElementById('input-password').value));
+	  		// create string for api request body
+	  		urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
+	  		// start login process
+	  		auth.doLogin(urlEncodedData);
+		} else if (methode == 'logout') {
+			// start logout process
+			auth.doLogout();
+		}
+		
+	}
+
+	// the template for logged in users which are not usergroup=public
+	user_template(authActions) {
+		let name = this.data.records.name;
+		let tmpl = html`<p>Du bist angemeldet als ${name}.</p>
+						<form class="form-horizontal" onsubmit="view.formSubmit(event,'logout')">
+							<input id="input-submit" class="btn btn-primary" type="submit"  value="Logout">
+						</form>`;
+		return tmpl;
+	}
+
+	// the template of the view
+	template() {
+		let tmpl = html`<div class="columns">
+						  <div class="column col-9 col-sm-12">
+						    <form class="form-horizontal" onsubmit="view.formSubmit(event,'login')">
+						      <div class="form-group">
+						        <div class="col-3">
+						          <label class="form-label" for="input-username">Benutzername</label>
+						        </div>
+						        <div class="col-9">
+						          <input id="input-username" class="form-input" type="text" placeholder="Benutzername" required>
+						        </div>
+							  </div>
+							  <div class="form-group">
+						        <div class="col-3">
+						          <label class="form-label" for="input-password">Passwort</label>
+						        </div>
+						        <div class="col-9">
+						          <input id="input-password" class="form-input" type="password" placeholder="Passwort" required>
+						        </div>
+							  </div>
+							  <div class="form-group">
+								  <div class="col-3"></div>
+								  <div class="col-9">
+								    <input id="input-submit" class="btn btn-primary" type="submit"  value="Login">
+								  </div>
+							  </div>
+						    </form>
+						  </div>
+						<div>`;
+		return tmpl;
+	}
+
+}
+
+module.exports = loginView;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+*
 * Class for the Breadcrumbs Module
 *
 */
-let baseModule = __webpack_require__(5);
+let baseModule = __webpack_require__(6);
 
 class breadcrumbModule extends baseModule{
 
@@ -397,7 +538,7 @@ class breadcrumbModule extends baseModule{
 module.exports = breadcrumbModule;
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports) {
 
 /*
@@ -429,7 +570,111 @@ class baseModule {
 module.exports = baseModule;
 
 /***/ }),
-/* 6 */
+/* 7 */
+/***/ (function(module, exports) {
+
+/*
+*
+* Class for the Authentication Helper
+* 
+*/
+
+class Authentication {
+
+	constructor() {
+		this.logged_in = false;
+		this.username = '';
+		this.usergroup = 'public';
+		this.token_generated = false;
+	}
+
+	getToken(requestBody) {
+		let url = 'https://api.weblab.spuur.ch/token';
+		let parameters = {method: 'POST', mode: 'cors',
+						  headers: {'Authorization': 'Bearer ' + localStorage.getItem('secure_token'),
+						  			'Content-Type': 'application/x-www-form-urlencoded'},
+						  body: requestBody};
+		async function getJXT() {
+			let response = await fetch (url, parameters);
+			if (await response.status == 200) {
+				return response.json();
+			} else {
+				let error = response.status + ': Falsches Passwort oder Benutzername';
+				render(setMessage('error', error), document.getElementById('message'));
+			}
+		}
+		getJXT().then((data) => {
+					let data1 = data;
+					// set token_generated
+					if (data1.secure_token != undefined) {
+						localStorage.setItem('secure_token', data1.secure_token);
+						localStorage.setItem('secure_username', data1.secure_username);
+						this.token_generated = true;
+					}
+					this.doLogin(requestBody);
+				})
+				//.catch((error) => {render(setMessage('error', error), document.getElementById('message'));})
+	}
+
+	doLogin(formBody) {
+		let url = 'https://api.weblab.spuur.ch/login';
+		let parameters = {method: 'GET', mode: 'cors',
+						  headers: {'Authorization': 'Bearer ' + localStorage.getItem('secure_token')}};
+		if (this.token_generated == true) {
+			async function doValidation() {
+				let response = await fetch (url, parameters);
+				if (await response.status == 200) {
+					return response.json();
+				} else {
+					let error = 'Netzwerkfehler: ' + response.status + ' - ' + response.statusText;
+					render(setMessage('error', error), document.getElementById('message'));
+				}
+			}
+			doValidation().then((data) => {
+						this.logged_in = true;
+						this.username = data.authorization.logged_in_as_user;
+						this.usergroup = data.authorization.logged_in_as_usergroup;
+						let msg = 'Login erfolgreich...';
+						render(setMessage('success', msg), document.getElementById('message'));
+						setTimeout(function(){window.history.pushState({}, '', '/login');modifyContent();},1000);
+					})
+					//.catch((error) => {render(setMessage('error', error), document.getElementById('message'));})
+		} else {
+			this.getToken(formBody);
+		}
+
+	}
+ 
+	doLogout() {
+		this.logged_in = false;
+		this.username = '';
+		this.usergroup = 'public';
+		this.token_generated == false;
+		localStorage.removeItem('secure_token');
+		localStorage.removeItem('secure_username');
+		let msg = 'Logout erfolgreich...';
+		render(setMessage('success', msg), document.getElementById('message'));
+		setTimeout(function(){window.history.pushState({}, '', '/login');modifyContent();},1000);
+	}
+
+	doAuthorisation(authorization_data) {
+		// update username and usergroup information
+		if (authorization_data.logged_in_as_user != 'no_login') {
+			this.username = authorization_data.logged_in_as_user;
+			this.usergroup = authorization_data.logged_in_as_usergroup;
+		} else {
+			this.logged_in = false;
+			this.username = '';
+			this.usergroup = 'public';
+		}
+		return [authorization_data.authorized_current_action, authorization_data.authorized_actions];		
+	}
+}
+
+module.exports = Authentication;
+
+/***/ }),
+/* 8 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1703,12 +1948,15 @@ window.html = lit_html_html;
 window.render = render;
 
 const dynView = __webpack_require__(1);
-const breadcrumbModule = __webpack_require__(4);
+const breadcrumbModule = __webpack_require__(5);
+const Authentication = __webpack_require__(7);
 
 window.onload = function() {
 
 	//-- Initialisation ---------
 
+	// Message-Box //
+	////////////////
 	// clear message box
 	const clearMessages = function() {
 		document.getElementById('message').innerHTML = '';
@@ -1724,6 +1972,9 @@ window.onload = function() {
 		return msgBox;
 	}
 	window.setMessage = setMessage;
+
+	// Router //
+	////////////
 
 	// eventlistener on internal links to modify the url
 	const indexLinks = function() {
@@ -1742,15 +1993,20 @@ window.onload = function() {
 			routes: routes
 		}
 	};
+	const myRouter = new Router('myRouter', siteRoutes)
+
+	// Global relevant HTML-Elements //
+	///////////////////////////////////
 
 	const appContent = document.getElementById('app-content');
 	const siteTitle = document.getElementById('site-titel');
 
-	const myRouter = new Router('myRouter', siteRoutes)
+	// Authorisation //
+	//////////////////
+	const auth = new Authentication();
+	window.auth = auth;
 
-	modifyContent();
-
-	//---------------------------	
+	//---------------------------
 
 	const internalLinks = function(event) {
 		var route = event.target.getAttribute('route');
@@ -1764,11 +2020,13 @@ window.onload = function() {
 	};
 
 	// modify HTML-content based on route
-	function modifyContent() {
+	const modifyContent = function() {
+		clearMessages();
 		let currentPath = window.location.pathname;		
 		let routeInfo = myRouter.routes.filter(function(r) {
 			return r.path === currentPath;
 		})[0];
+		console.log('routeInfo:');
 		console.log(routeInfo);
 		if (!routeInfo) {
 			siteTitle.innerHTML = '404';
@@ -1780,18 +2038,26 @@ window.onload = function() {
 			siteTitle.innerHTML = routeInfo.sitename;
 			
 			// construct view-class based on route
-			let c = routeInfo.view + 'View';
-			let view = dynView(c, routeInfo);
-			//let view = new dynView(c, routeInfo);
+			let viewName = routeInfo.view + 'View';
+			let view = dynView(viewName, routeInfo);
 			window.view = view;
+			// authentification of this view (Are you authorized to see this view?)
+			//auth.doAuthorisation(viewName);
+
 			// insert content into <div id="app-content">
 			view.renderView(appContent);
+
+			setTimeout(function(){console.log('viewObj:');console.log(view);},2000);
 
 			// insert breadcrumbs into <ul class="breadcrumb">
 			let breadcrumbs = new breadcrumbModule(routeInfo, 'breadcrumb');
 			breadcrumbs.renderModule();
-		} 
+		}
 	}
+	window.modifyContent = modifyContent;
+
+	// load initial site
+	modifyContent();
 };
 
 /***/ })

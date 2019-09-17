@@ -11,11 +11,14 @@ window.render = render;
 
 const dynView = require('./views/dynView');
 const breadcrumbModule = require('./modules/breadcrumbModule');
+const Authentication = require('./helper/authentication');
 
 window.onload = function() {
 
 	//-- Initialisation ---------
 
+	// Message-Box //
+	////////////////
 	// clear message box
 	const clearMessages = function() {
 		document.getElementById('message').innerHTML = '';
@@ -31,6 +34,9 @@ window.onload = function() {
 		return msgBox;
 	}
 	window.setMessage = setMessage;
+
+	// Router //
+	////////////
 
 	// eventlistener on internal links to modify the url
 	const indexLinks = function() {
@@ -49,15 +55,20 @@ window.onload = function() {
 			routes: routes
 		}
 	};
+	const myRouter = new Router('myRouter', siteRoutes)
+
+	// Global relevant HTML-Elements //
+	///////////////////////////////////
 
 	const appContent = document.getElementById('app-content');
 	const siteTitle = document.getElementById('site-titel');
 
-	const myRouter = new Router('myRouter', siteRoutes)
+	// Authorisation //
+	//////////////////
+	const auth = new Authentication();
+	window.auth = auth;
 
-	modifyContent();
-
-	//---------------------------	
+	//---------------------------
 
 	const internalLinks = function(event) {
 		var route = event.target.getAttribute('route');
@@ -71,11 +82,13 @@ window.onload = function() {
 	};
 
 	// modify HTML-content based on route
-	function modifyContent() {
+	const modifyContent = function() {
+		clearMessages();
 		let currentPath = window.location.pathname;		
 		let routeInfo = myRouter.routes.filter(function(r) {
 			return r.path === currentPath;
 		})[0];
+		console.log('routeInfo:');
 		console.log(routeInfo);
 		if (!routeInfo) {
 			siteTitle.innerHTML = '404';
@@ -87,15 +100,24 @@ window.onload = function() {
 			siteTitle.innerHTML = routeInfo.sitename;
 			
 			// construct view-class based on route
-			let c = routeInfo.view + 'View';
-			let view = dynView(c, routeInfo);
+			let viewName = routeInfo.view + 'View';
+			let view = dynView(viewName, routeInfo);
 			window.view = view;
+			// authentification of this view (Are you authorized to see this view?)
+			//auth.doAuthorisation(viewName);
+
 			// insert content into <div id="app-content">
 			view.renderView(appContent);
+
+			setTimeout(function(){console.log('viewObj:');console.log(view);},2000);
 
 			// insert breadcrumbs into <ul class="breadcrumb">
 			let breadcrumbs = new breadcrumbModule(routeInfo, 'breadcrumb');
 			breadcrumbs.renderModule();
-		} 
+		}
 	}
+	window.modifyContent = modifyContent;
+
+	// load initial site
+	modifyContent();
 };
