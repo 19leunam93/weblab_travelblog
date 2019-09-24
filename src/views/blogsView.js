@@ -25,15 +25,15 @@ class blogsView extends baseView {
 											  	  	  <div>
 											  	  	    <button class="btn btn-primary" route="${blog.alias}">Weiterlesen...</button>
 											  	  	  </div>
-											  	  	  <div class"btn-group btn-group-block">
-											  	  	    <button class="btn">Blog Bearbeiten</button>
+											  	  	  <div class="btn-group btn-group-block">
+											  	  	    <button class="btn" route="edit/blog">Blog Bearbeiten</button>
 											  	  	    <button class="btn btn-error">Blog Löschen</button>
 											  	  	  </div>
 											  	  	</div>
 											  	  </div>
 											  	</div>
 											  </div>`)}`;
-		let tmpl = html`<div><button class="btn btn-success">Neuer Blog</button><div><div class="columns">${bloglist}<div>`;
+		let tmpl = html`<div><button class="btn btn-success" route="edit/blog">Neuer Blog</button></div><div class="columns">${bloglist}<div>`;
 		return tmpl;
 	}
 

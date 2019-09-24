@@ -566,6 +566,7 @@ dl dd {
   display: inline-block;
   font-size: 0.8rem;
   height: 1.8rem;
+  max-width: 200px;
   line-height: 1.2rem;
   outline: none;
   padding: 0.25rem 0.4rem;
@@ -703,7 +704,9 @@ dl dd {
     .btn-group .btn:focus, .btn-group .btn:hover, .btn-group .btn:active, .btn-group .btn.active {
       z-index: 1; }
   .btn-group.btn-group-block {
-    display: flex; }
+    display: flex;
+    margin-top: 15px;
+    margin-bottom: 15px; }
     .btn-group.btn-group-block .btn {
       flex: 1 0 0; }
 

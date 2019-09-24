@@ -9,6 +9,7 @@
   display: inline-block;
   font-size: $font-size;
   height: $control-size;
+  max-width: 200px;
   line-height: $line-height;
   outline: none;
   padding: $control-padding-y $control-padding-x;
@@ -185,6 +186,8 @@
 
   &.btn-group-block {
     display: flex;
+    margin-top: 15px;
+    margin-bottom: 15px;
 
     .btn {
       flex: 1 0 0;

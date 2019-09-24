@@ -26,7 +26,7 @@ class baseView {
 	template401() {
 		let name = this.sitename;
 		let msg = '401: Nicht authorisiert!';
-		render(setMessage('error', error), document.getElementById('message'));
+		render(setMessage('error', msg), document.getElementById('message'));
 		return html`<p>Du bist nicht authorisiert, die Seite ${name} zu betrachten.</p>`;
 	}
 
@@ -64,12 +64,21 @@ class baseView {
 					.then(() => {
 						// authentification of this view (Are you authorized to see this view?)
 						[this.authorized, this.authorized_actions] = auth.doAuthorisation(this.data.authorization);
+						// if your token is outdated, remove token and reload page
+						if (auth.token_expiretime < 0) {
+							let msg = 'Login abgelaufen. Bitte erneut einloggen...';
+							localStorage.removeItem('secure_token');
+							localStorage.removeItem('secure_username');
+							render(setMessage('success', msg), document.getElementById('message'));
+							setTimeout(function(){modifyContent();},1000);
+							return;
+						}
 						console.log('authObj:');
 						console.log(auth);
 						// depending of the authorization select the template
 						console.log('template:');
 						if (this.authorized) {
-							if (auth.logged_in) {
+							if (auth.token_expiretime > 0) {
 								render(this.user_template(this.authorized_actions), element);
 								console.log('user_template()');
 							} else {

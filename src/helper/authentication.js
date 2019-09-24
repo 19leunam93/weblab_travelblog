@@ -7,10 +7,9 @@
 class Authentication {
 
 	constructor() {
-		this.logged_in = false;
 		this.username = '';
 		this.usergroup = 'public';
-		this.token_generated = false;
+		this.token_expiretime = 0;
 	}
 
 	getToken(requestBody) {
@@ -30,11 +29,10 @@ class Authentication {
 		}
 		getJXT().then((data) => {
 					let data1 = data;
-					// set token_generated
 					if (data1.secure_token != undefined) {
 						localStorage.setItem('secure_token', data1.secure_token);
 						localStorage.setItem('secure_username', data1.secure_username);
-						this.token_generated = true;
+						//this.token_generated = true;
 					}
 					this.doLogin(requestBody);
 				})
@@ -45,7 +43,7 @@ class Authentication {
 		let url = 'https://api.weblab.spuur.ch/login';
 		let parameters = {method: 'GET', mode: 'cors',
 						  headers: {'Authorization': 'Bearer ' + localStorage.getItem('secure_token')}};
-		if (this.token_generated == true) {
+		if (localStorage.getItem("secure_token") !== null) {
 			async function doValidation() {
 				let response = await fetch (url, parameters);
 				if (await response.status == 200) {
@@ -56,30 +54,28 @@ class Authentication {
 				}
 			}
 			doValidation().then((data) => {
-						this.logged_in = true;
 						this.username = data.authorization.logged_in_as_user;
 						this.usergroup = data.authorization.logged_in_as_usergroup;
 						let msg = 'Login erfolgreich...';
 						render(setMessage('success', msg), document.getElementById('message'));
-						setTimeout(function(){window.history.pushState({}, '', '/login');modifyContent();},1000);
+						setTimeout(function(){modifyContent();},1000);
 					})
 					//.catch((error) => {render(setMessage('error', error), document.getElementById('message'));})
 		} else {
 			this.getToken(formBody);
 		}
 
-	}
+	} 
  
 	doLogout() {
-		this.logged_in = false;
 		this.username = '';
 		this.usergroup = 'public';
-		this.token_generated == false;
+		//this.token_generated == false;
 		localStorage.removeItem('secure_token');
 		localStorage.removeItem('secure_username');
 		let msg = 'Logout erfolgreich...';
 		render(setMessage('success', msg), document.getElementById('message'));
-		setTimeout(function(){window.history.pushState({}, '', '/login');modifyContent();},1000);
+		setTimeout(function(){modifyContent();},1000);
 	}
 
 	doAuthorisation(authorization_data) {
@@ -88,10 +84,14 @@ class Authentication {
 			this.username = authorization_data.logged_in_as_user;
 			this.usergroup = authorization_data.logged_in_as_usergroup;
 		} else {
-			this.logged_in = false;
 			this.username = '';
 			this.usergroup = 'public';
 		}
+		if (authorization_data.token_is_valid_for === 'no_token') {
+			this.token_expiretime = 0;
+		} else {
+			this.token_expiretime = authorization_data.token_is_valid_for;
+		}		
 		return [authorization_data.authorized_current_action, authorization_data.authorized_actions];		
 	}
 }

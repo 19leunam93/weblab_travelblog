@@ -116,7 +116,7 @@ class baseView {
 	template401() {
 		let name = this.sitename;
 		let msg = '401: Nicht authorisiert!';
-		render(setMessage('error', error), document.getElementById('message'));
+		render(setMessage('error', msg), document.getElementById('message'));
 		return html`<p>Du bist nicht authorisiert, die Seite ${name} zu betrachten.</p>`;
 	}
 
@@ -154,12 +154,21 @@ class baseView {
 					.then(() => {
 						// authentification of this view (Are you authorized to see this view?)
 						[this.authorized, this.authorized_actions] = auth.doAuthorisation(this.data.authorization);
+						// if your token is outdated, remove token and reload page
+						if (auth.token_expiretime < 0) {
+							let msg = 'Login abgelaufen. Bitte erneut einloggen...';
+							localStorage.removeItem('secure_token');
+							localStorage.removeItem('secure_username');
+							render(setMessage('success', msg), document.getElementById('message'));
+							setTimeout(function(){modifyContent();},1000);
+							return;
+						}
 						console.log('authObj:');
 						console.log(auth);
 						// depending of the authorization select the template
 						console.log('template:');
 						if (this.authorized) {
-							if (auth.logged_in) {
+							if (auth.token_expiretime > 0) {
 								render(this.user_template(this.authorized_actions), element);
 								console.log('user_template()');
 							} else {
@@ -235,15 +244,15 @@ class blogsView extends baseView {
 											  	  	  <div>
 											  	  	    <button class="btn btn-primary" route="${blog.alias}">Weiterlesen...</button>
 											  	  	  </div>
-											  	  	  <div class"btn-group btn-group-block">
-											  	  	    <button class="btn">Blog Bearbeiten</button>
+											  	  	  <div class="btn-group btn-group-block">
+											  	  	    <button class="btn" route="edit/blog">Blog Bearbeiten</button>
 											  	  	    <button class="btn btn-error">Blog Löschen</button>
 											  	  	  </div>
 											  	  	</div>
 											  	  </div>
 											  	</div>
 											  </div>`)}`;
-		let tmpl = html`<div><button class="btn btn-success">Neuer Blog</button><div><div class="columns">${bloglist}<div>`;
+		let tmpl = html`<div><button class="btn btn-success" route="edit/blog">Neuer Blog</button></div><div class="columns">${bloglist}<div>`;
 		return tmpl;
 	}
 
@@ -277,7 +286,7 @@ module.exports = blogsView;
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/*
+/* 
 *
 * Class for the "Blog" View (single Blog)
 *
@@ -357,6 +366,91 @@ class blogView extends baseView {
 		}
 		//Blog Einleitung (Titelbild, Beschreibung, Details)
 		let tmpl = html`<div class="blog-intro">
+							<figure class="figure">
+			 				  <img class="img-responsive" src="${blog.img_titel}">
+			 				  <figcaption class="figure-caption">Datum: ${blog.date} / Destination: ${blog.destination} / Dauer: ${blog.duration} Tage</figcaption>
+			 				</figure>
+			 				<p class="text-intro">${blog.description}</p><br /><div class="columns">${postlist}</div>
+		 				</div>`;
+		return tmpl;
+	}
+
+	// the template for logged in users
+	user_template() {
+		let blog = this.data.records;
+		let posts = blog.posts.records;
+		let postlist = [];
+		let gallery = html``;
+		for (let post of posts) {
+			if (post.gallery != undefined) {
+				let images = post.gallery.images;
+				let figlist = [];
+				let loclist = [];
+				let navlist = [];
+				let lenght = images.length;
+				let index = 1;
+				let prev = lenght;
+				let next = index + 1;
+				for (let img of images) {
+					if (index == 1) {prev = lenght; next = index + 1;}
+					else if (index == lenght) {prev = index - 1; next = 1;}
+					else {prev = index - 1; next = index + 1;}
+					img = img.replace(/"/g,'');
+
+				//Carousel Template
+				//-----------------
+					figlist.push(html`<figure class="carousel-item">
+										      <label class="item-prev btn btn-action btn-lg" for="slide-${prev}"><i class="icon icon-arrow-left"></i></label>
+										      <label class="item-next btn btn-action btn-lg" for="slide-${next}"><i class="icon icon-arrow-right"></i></label>
+										      <img class="img-responsive rounded" src="${img}">
+										  </figure>`);
+					if (index == 1) {
+						loclist.push(html`<input class="carousel-locator" id="slide-${index}" type="radio" name="carousel-radio" hidden="" checked="">`);
+					} else {
+						loclist.push(html`<input class="carousel-locator" id="slide-${index}" type="radio" name="carousel-radio" hidden="">`);
+					}
+					
+					navlist.push(html`<label class="nav-item text-hide c-hand" for="slide-${index}">${index}</label>`);
+					index++;
+				}
+				gallery = html`<div class="carousel p-centered">
+									  ${loclist}
+									  <div class="carousel-container">
+									  	${figlist}
+									  </div>
+									  <div class="carousel-nav">
+									  	${navlist}
+									  </div>
+								   </div>`;
+				//------------------
+			} else {gallery = html``;}
+
+			//Einzelner Post
+			postlist.push(html`<div class="column col-12 blogpost">
+									 <div class="card flex-column">
+									 <div class="card-body">
+									   <div class="btn-group btn-group-block">
+										 <button class="btn" route="edit/post">Blog Bearbeiten</button>
+										 <button class="btn btn-error">Blog Löschen</button>
+									   </div>
+								       <h4>${post.title}</h4>
+								       <div class="infos text-gray">Datum: ${post.date} / Author: ${post.user_id} / Anzahl Likes: ${post.likes}</div>
+								       <p class="text-intro">${post.txt_intro}</p>
+									   <figure class="figure mb-6">
+									     <img class="img-responsive p-centered" src="${post.img}">
+									   </figure>
+									   <p>${post.txt_content}</p>
+									   ${gallery}
+									   <div class="text-center mt-10">
+									   	 <button class="btn" onclick="view.doLike(${post.id})"><span class="icon icon-emoji mr-2"></span>Gefällt mir</button><span class="ml-2">(Likes: <span id="postLike-${post.id}">${post.likes}</span>)</span>
+									   </div>
+									 </div>
+									 </div>
+						  		  </div>`);
+		}
+		//Blog Einleitung (Titelbild, Beschreibung, Details)
+		let tmpl = html`<div class="mt-4 mb-4"><button class="btn btn-success" route="edit/post">Neuer Post</button></div>
+						<div class="blog-intro">
 							<figure class="figure">
 			 				  <img class="img-responsive" src="${blog.img_titel}">
 			 				  <figcaption class="figure-caption">Datum: ${blog.date} / Destination: ${blog.destination} / Dauer: ${blog.duration} Tage</figcaption>
@@ -582,10 +676,9 @@ module.exports = baseModule;
 class Authentication {
 
 	constructor() {
-		this.logged_in = false;
 		this.username = '';
 		this.usergroup = 'public';
-		this.token_generated = false;
+		this.token_expiretime = 0;
 	}
 
 	getToken(requestBody) {
@@ -605,11 +698,10 @@ class Authentication {
 		}
 		getJXT().then((data) => {
 					let data1 = data;
-					// set token_generated
 					if (data1.secure_token != undefined) {
 						localStorage.setItem('secure_token', data1.secure_token);
 						localStorage.setItem('secure_username', data1.secure_username);
-						this.token_generated = true;
+						//this.token_generated = true;
 					}
 					this.doLogin(requestBody);
 				})
@@ -620,7 +712,7 @@ class Authentication {
 		let url = 'https://api.weblab.spuur.ch/login';
 		let parameters = {method: 'GET', mode: 'cors',
 						  headers: {'Authorization': 'Bearer ' + localStorage.getItem('secure_token')}};
-		if (this.token_generated == true) {
+		if (localStorage.getItem("secure_token") !== null) {
 			async function doValidation() {
 				let response = await fetch (url, parameters);
 				if (await response.status == 200) {
@@ -631,30 +723,28 @@ class Authentication {
 				}
 			}
 			doValidation().then((data) => {
-						this.logged_in = true;
 						this.username = data.authorization.logged_in_as_user;
 						this.usergroup = data.authorization.logged_in_as_usergroup;
 						let msg = 'Login erfolgreich...';
 						render(setMessage('success', msg), document.getElementById('message'));
-						setTimeout(function(){window.history.pushState({}, '', '/login');modifyContent();},1000);
+						setTimeout(function(){modifyContent();},1000);
 					})
 					//.catch((error) => {render(setMessage('error', error), document.getElementById('message'));})
 		} else {
 			this.getToken(formBody);
 		}
 
-	}
+	} 
  
 	doLogout() {
-		this.logged_in = false;
 		this.username = '';
 		this.usergroup = 'public';
-		this.token_generated == false;
+		//this.token_generated == false;
 		localStorage.removeItem('secure_token');
 		localStorage.removeItem('secure_username');
 		let msg = 'Logout erfolgreich...';
 		render(setMessage('success', msg), document.getElementById('message'));
-		setTimeout(function(){window.history.pushState({}, '', '/login');modifyContent();},1000);
+		setTimeout(function(){modifyContent();},1000);
 	}
 
 	doAuthorisation(authorization_data) {
@@ -663,10 +753,14 @@ class Authentication {
 			this.username = authorization_data.logged_in_as_user;
 			this.usergroup = authorization_data.logged_in_as_usergroup;
 		} else {
-			this.logged_in = false;
 			this.username = '';
 			this.usergroup = 'public';
 		}
+		if (authorization_data.token_is_valid_for === 'no_token') {
+			this.token_expiretime = 0;
+		} else {
+			this.token_expiretime = authorization_data.token_is_valid_for;
+		}		
 		return [authorization_data.authorized_current_action, authorization_data.authorized_actions];		
 	}
 }
@@ -1959,7 +2053,8 @@ window.onload = function() {
 	////////////////
 	// clear message box
 	const clearMessages = function() {
-		document.getElementById('message').innerHTML = '';
+		let $tmpl = lit_html_html``;
+		render($tmpl, document.getElementById('message'));
 	}
 	window.clearMessages = clearMessages;
 
@@ -2005,6 +2100,7 @@ window.onload = function() {
 	//////////////////
 	const auth = new Authentication();
 	window.auth = auth;
+
 
 	//---------------------------
 

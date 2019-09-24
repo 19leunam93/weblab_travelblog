@@ -21,7 +21,8 @@ window.onload = function() {
 	////////////////
 	// clear message box
 	const clearMessages = function() {
-		document.getElementById('message').innerHTML = '';
+		let $tmpl = html``;
+		render($tmpl, document.getElementById('message'));
 	}
 	window.clearMessages = clearMessages;
 
@@ -67,6 +68,7 @@ window.onload = function() {
 	//////////////////
 	const auth = new Authentication();
 	window.auth = auth;
+
 
 	//---------------------------
 
