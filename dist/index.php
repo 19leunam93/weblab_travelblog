@@ -1,7 +1,7 @@
 <?php 
 
 //get id, title and alias of blogs
-$db = new mysqli('localhost', 'spuurch_weblab', 'password', 'spuurch_weblab03');
+$db = new mysqli('localhost', 'db_name', 'password', 'username');
 if ($db->connect_error) {
     die("Connection failed: " . $db->connect_error);
 }
