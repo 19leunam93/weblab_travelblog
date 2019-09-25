@@ -9,7 +9,7 @@ class blogView extends baseView {
 
 	// the template of the view
 	template() {
-		let blog = this.data.records;
+		let blog = this.data.records[0];
 		let posts = blog.posts.records;
 		let postlist = [];
 		let gallery = html``;
@@ -89,7 +89,7 @@ class blogView extends baseView {
 
 	// the template for logged in users
 	user_template() {
-		let blog = this.data.records;
+		let blog = this.data.records[0];
 		let posts = blog.posts.records;
 		let postlist = [];
 		let gallery = html``;

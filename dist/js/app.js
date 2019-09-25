@@ -297,7 +297,7 @@ class blogView extends baseView {
 
 	// the template of the view
 	template() {
-		let blog = this.data.records;
+		let blog = this.data.records[0];
 		let posts = blog.posts.records;
 		let postlist = [];
 		let gallery = html``;
@@ -377,7 +377,7 @@ class blogView extends baseView {
 
 	// the template for logged in users
 	user_template() {
-		let blog = this.data.records;
+		let blog = this.data.records[0];
 		let posts = blog.posts.records;
 		let postlist = [];
 		let gallery = html``;
@@ -2049,8 +2049,7 @@ window.onload = function() {
 
 	//-- Initialisation ---------
 
-	// Message-Box //
-	////////////////
+	//-- Message-Box ------
 	// clear message box
 	const clearMessages = function() {
 		let $tmpl = lit_html_html``;
@@ -2068,9 +2067,8 @@ window.onload = function() {
 	}
 	window.setMessage = setMessage;
 
-	// Router //
-	////////////
 
+	//-- Router ----------
 	// eventlistener on internal links to modify the url
 	const indexLinks = function() {
 		let activeRoutes = Array.from(document.querySelectorAll('[route]'));
@@ -2090,20 +2088,6 @@ window.onload = function() {
 	};
 	const myRouter = new Router('myRouter', siteRoutes)
 
-	// Global relevant HTML-Elements //
-	///////////////////////////////////
-
-	const appContent = document.getElementById('app-content');
-	const siteTitle = document.getElementById('site-titel');
-
-	// Authorisation //
-	//////////////////
-	const auth = new Authentication();
-	window.auth = auth;
-
-
-	//---------------------------
-
 	const internalLinks = function(event) {
 		var route = event.target.getAttribute('route');
 		window.history.pushState({}, '', route);
@@ -2115,7 +2099,21 @@ window.onload = function() {
 		modifyContent();
 	};
 
-	// modify HTML-content based on route
+
+	//-- HTML-Elements ----
+	const appContent = document.getElementById('app-content');
+	const siteTitle = document.getElementById('site-titel');
+
+
+	//-- Authorisation ----
+	const auth = new Authentication();
+	window.auth = auth;
+
+	//--end Initialisation-------
+
+
+
+	// modify app-content Container based on route
 	const modifyContent = function() {
 		clearMessages();
 		let currentPath = window.location.pathname;		
@@ -2137,8 +2135,6 @@ window.onload = function() {
 			let viewName = routeInfo.view + 'View';
 			let view = dynView(viewName, routeInfo);
 			window.view = view;
-			// authentification of this view (Are you authorized to see this view?)
-			//auth.doAuthorisation(viewName);
 
 			// insert content into <div id="app-content">
 			view.renderView(appContent);
