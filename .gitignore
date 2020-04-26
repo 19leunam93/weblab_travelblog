@@ -1,3 +1,4 @@
 # Ignore folder in Repository
 node_modules/
 dist/images/
+images/

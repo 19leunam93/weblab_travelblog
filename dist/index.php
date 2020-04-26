@@ -1,7 +1,7 @@
 <?php 
 
 //get id, title and alias of blogs
-$db = new mysqli('localhost', 'db_name', 'password', 'username');
+$db = new mysqli('localhost', 'username', 'password', 'db_name');
 if ($db->connect_error) {
     die("Connection failed: " . $db->connect_error);
 }
@@ -94,6 +94,7 @@ if ($result->num_rows > 0) {
 	</main>
 	<footer class="docs-footer bg-gray text-center">
 		<p>© Copyright 2019 by Manuel Häusler</p>
+		<p>Fotos von <a href="https://kultur.spuur.ch" target="_blank">Claudia Häusler</a></p>
 		<a route="/login">Login</a>
 	</footer>
 
